@@ -1,16 +1,22 @@
 import { type NextPage } from "next";
 import Head from "next/head";
-import Link from "next/link";
 import { trpc } from "../utils/trpc";
 import { useState } from "react";
 import { ShoppingItem } from "@prisma/client";
 import ItemModal from "../components/ItemModal";
 
 const Home: NextPage = () => {
-  // const hello = trpc.example.hello.useQuery({ text: "from tRPC" });
 
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [modal, setModal] = useState<boolean>(false);
+
+  const {data: itemsData, isLoading} = trpc.items.getAll.useQuery(undefined, {onSuccess(data) {
+    setItems(data);
+  },});
+
+  if(!itemsData || isLoading){
+    return <p>Loading...</p>
+  }
 
   return (
     <>
@@ -20,7 +26,7 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      {modal ? <ItemModal setModal={setModal} />: <></>}
+      {modal ? <ItemModal setModal={setModal} setItems={setItems} />: <></>}
 
       <main className="mx-auto my-12 max-w-3xl">
         <div className="flex justify-between">

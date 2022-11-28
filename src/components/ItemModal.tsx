@@ -1,13 +1,18 @@
+import { ShoppingItem } from "@prisma/client";
 import { Dispatch, FC, SetStateAction, useState } from "react";
 import { trpc } from "../utils/trpc";
 
 interface ItemModalProps {
   setModal: Dispatch<SetStateAction<boolean>>;
+  setItems: Dispatch<SetStateAction<ShoppingItem[]>>
 }
 
-const ItemModal: FC<ItemModalProps> = ({ setModal }) => {
+const ItemModal: FC<ItemModalProps> = ({ setModal, setItems }) => {
 
-  const addItem = trpc.items.addItem.useMutation();
+  const addItem = trpc.items.addItem.useMutation({onSuccess: (data) => {
+    setItems((prev) => [...prev, data])
+  }});
+  
   const [input, setInput] = useState<string>("");
 
   return (
