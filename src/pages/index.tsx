@@ -4,18 +4,30 @@ import { trpc } from "../utils/trpc";
 import { useState } from "react";
 import { ShoppingItem } from "@prisma/client";
 import ItemModal from "../components/ItemModal";
+import { AiFillEdit } from "react-icons/ai";
+import { HiX } from "react-icons/hi";
+import ItemForm from "../components/ItemForm";
 
 const Home: NextPage = () => {
-
   const [items, setItems] = useState<ShoppingItem[]>([]);
+  const [currentItem, setCurrentItem] = useState<string>("");
   const [modal, setModal] = useState<boolean>(false);
+  const [editForm, setEditForm] = useState<boolean>(false);
 
-  const {data: itemsData, isLoading} = trpc.items.getAll.useQuery(undefined, {onSuccess(data) {
-    setItems(data);
-  },});
+  const { data: itemsData, isLoading } = trpc.items.getAll.useQuery(undefined, {
+    onSuccess(data) {
+      setItems(data);
+    },
+  });
 
-  if(!itemsData || isLoading){
-    return <p>Loading...</p>
+  const deleteItem = trpc.items.deleteItem.useMutation({
+    onSuccess: (item) => {
+      setItems((prev) => prev.filter((items) => items.id !== item.id));
+    },
+  });
+
+  if (!itemsData || isLoading) {
+    return <p>Loading...</p>;
   }
 
   return (
@@ -26,24 +38,51 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      {modal ? <ItemModal setModal={setModal} setItems={setItems} />: <></>}
+      {modal ? <ItemModal setModal={setModal} setItems={setItems} /> : <></>}
+
+      {editForm ? (
+        <ItemForm setEditForm={setEditForm} setItems={setItems} currentItemId={currentItem} />
+      ) : (
+        <></>
+      )}
 
       <main className="mx-auto my-12 max-w-3xl">
         <div className="flex justify-between">
           <h2 className="text-2xl font-semibold">My Shopping List</h2>
-          <button onClick={() => setModal(!modal)} type="button" className="bg-violet-500 text-white text-lg p-2 rounded-md transition hover:bg-violet-800">Add Shopping Item</button>
+          <button
+            onClick={() => setModal(!modal)}
+            type="button"
+            className="rounded-md bg-violet-500 p-2 text-lg text-white transition hover:bg-violet-800"
+          >
+            Add Shopping Item
+          </button>
         </div>
 
-        <ul>
-          
+        <ul className="mt-12">
           {items.map((item) => (
-            <li key={item.id} className="flex justify-between items-center">
-              <span>{item.name}</span>
+            <li
+              key={item.id}
+              className="mb-3 flex items-center justify-between"
+            >
+              <span className="text-xl">{item.name}</span>
+              <div className="flex">
+                <HiX
+                  className="mr-3 cursor-pointer text-xl text-rose-600"
+                  onClick={() => {
+                    deleteItem.mutate({ id: item.id });
+                  }}
+                />
+                <AiFillEdit
+                  className="mr-3 cursor-pointer text-xl text-green-600"
+                  onClick={() => {
+                    setEditForm(!editForm);
+                    setCurrentItem(item.id);
+                  }}
+                />
+              </div>
             </li>
           ))}
-
         </ul>
-
       </main>
     </>
   );
